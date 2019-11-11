@@ -4,11 +4,6 @@
 #
 ###############################################################################
 
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/cudpp
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  )
 
 set(CCFILES
   cudpp_hash.cpp
@@ -42,7 +37,7 @@ set(CUFILES
   )
 
 set(HFILES_PUBLIC
-  ../../include/cudpp_hash.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../include/cudpp_hash.h
   )
 
 source_group("CUDA Source Files" FILES ${CUFILES})
@@ -100,6 +95,16 @@ cuda_add_library(cudpp_hash ${LIB_TYPE}
   # OPTIONS ${GENCODE} ${VERBOSE_PTXAS}
   OPTIONS ${VERBOSE_PTXAS}
   )
+
+target_include_directories(cudpp_hash PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/cudpp
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+# Include the public header file directory only for CMake build
+# projects that have this as a subproject
+target_include_directories(cudpp_hash PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
+)
 
 target_link_libraries(cudpp_hash cudpp)
 

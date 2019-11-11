@@ -4,15 +4,6 @@
 #
 ###############################################################################
 
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../ext/moderngpu/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../ext/cub
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/app
-  ${CMAKE_CURRENT_SOURCE_DIR}/kernel
-  ${CMAKE_CURRENT_SOURCE_DIR}/cta
-  )
 
 set(CCFILES
   cudpp.cpp
@@ -139,6 +130,21 @@ cuda_add_library(cudpp ${LIB_TYPE}
   # OPTIONS ${GENCODE} ${VERBOSE_PTXAS}
   OPTIONS ${VERBOSE_PTXAS}
   )
+
+target_include_directories(cudpp PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../ext/moderngpu/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../ext/cub
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/app
+    ${CMAKE_CURRENT_SOURCE_DIR}/kernel
+    ${CMAKE_CURRENT_SOURCE_DIR}/cta
+    )
+
+# Include the public header file directory only for CMake build
+# projects that have this as a subproject
+target_include_directories(cudpp PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
+    )
 
 install(FILES ${HFILES_PUBLIC}
   DESTINATION include
