@@ -10,7 +10,7 @@ find_package(CUDA REQUIRED)
 
 option(CUDPP_BUILD_SHARED_LIBS
   "On to build shared libraries, off for static libraries."
-  OFF
+  ON
   )
 
 option(CUDPP_BUILD_APPLICATIONS
@@ -40,7 +40,8 @@ set(LIBRARY_OUTPUT_PATH
 set(CMAKE_MODULE_PATH
   ${CMAKE_SOURCE_DIR}/cmake
   )
-
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CudaAutodetectCompute.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CudaComputeTargetFlags.cmake)
 set(cudpp_INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_SOURCE_DIR}/ext/moderngpu/include/
