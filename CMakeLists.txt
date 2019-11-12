@@ -131,34 +131,34 @@ endif (CUDPP_BUILD_APPLICATIONS)
 # these libraries.
 export(
   TARGETS cudpp cudpp_hash
-  FILE ${LIBRARY_OUTPUT_PATH}/cudpp-targets.cmake
+  FILE ${LIBRARY_OUTPUT_PATH}/cmake/cudpp-targets.cmake
   )
 
 set(cudpp_INCLUDE_DIRS_CONFIG ${cudpp_INCLUDE_DIRS})
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/cudpp-config.cmake.in
-  ${LIBRARY_OUTPUT_PATH}/cudpp-config.cmake
+  ${LIBRARY_OUTPUT_PATH}/cmake/cudpp-config.cmake
   @ONLY
   )
 
 set(cudpp_INCLUDE_DIRS_CONFIG "\${_install_dir}/include")
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/cudpp-config.cmake.in
-  ${LIBRARY_OUTPUT_PATH}/cudpp-config.cmake.install
+  ${LIBRARY_OUTPUT_PATH}/cmake/cudpp-config.cmake.install
   @ONLY
   )
 install(FILES ${LIBRARY_OUTPUT_PATH}/cudpp-config.cmake.install
-  DESTINATION lib
+  DESTINATION lib/cmake
   RENAME cudpp-config.cmake
   )
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/cudpp-config-version.cmake.in
-  ${LIBRARY_OUTPUT_PATH}/cudpp-config-version.cmake
+  ${LIBRARY_OUTPUT_PATH}/cmake/cudpp-config-version.cmake
   @ONLY
   )
-install(FILES ${LIBRARY_OUTPUT_PATH}/cudpp-config-version.cmake
-  DESTINATION lib
+install(FILES ${LIBRARY_OUTPUT_PATH}/cmake/cudpp-config-version.cmake
+  DESTINATION lib/cmake
   )
 
 set(CPACK_PACKAGE_VERSION_MAJOR ${cudpp_VERSION_MAJOR})
