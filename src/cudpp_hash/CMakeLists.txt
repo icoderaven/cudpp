@@ -114,9 +114,9 @@ install(FILES ${HFILES_PUBLIC}
 
 install(TARGETS cudpp_hash
   DESTINATION lib
-  EXPORT cudpp-targets
+  EXPORT cudpp_hash-targets
   )
 
-install(EXPORT cudpp-targets
+install(EXPORT cudpp_hash-targets
   DESTINATION lib
   )
