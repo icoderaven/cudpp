@@ -147,7 +147,7 @@ configure_file(
   ${LIBRARY_OUTPUT_PATH}/cmake/cudpp-config.cmake.install
   @ONLY
   )
-install(FILES ${LIBRARY_OUTPUT_PATH}/cudpp-config.cmake.install
+install(FILES ${LIBRARY_OUTPUT_PATH}/cmake/cudpp-config.cmake.install
   DESTINATION lib/cmake
   RENAME cudpp-config.cmake
   )
