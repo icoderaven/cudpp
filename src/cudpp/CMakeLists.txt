@@ -156,5 +156,5 @@ install(TARGETS cudpp
   )
 
 install(EXPORT cudpp-targets
-  DESTINATION lib
+  DESTINATION lib/cmake
   )

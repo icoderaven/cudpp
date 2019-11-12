@@ -118,5 +118,5 @@ install(TARGETS cudpp_hash
   )
 
 install(EXPORT cudpp_hash-targets
-  DESTINATION lib
+  DESTINATION lib/cmake
   )
