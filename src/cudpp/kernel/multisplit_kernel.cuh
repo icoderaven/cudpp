@@ -129,14 +129,14 @@ __global__ void histogram_pre_scan_compaction(key_t* input, uint32_t* bin, uint3
         valid_input = true;
       }
       // masking out those threads which read an invalid key
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t mask = __ballot_sync(FULL_MASK,valid_input);
       #else
       uint32_t mask = __ballot(valid_input);
       #endif
 
       // computing histogram
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t rx_buffer = __ballot_sync(FULL_MASK,bucket_identifier(myInput[kk]));
       #else
       uint32_t rx_buffer = __ballot(bucket_identifier(myInput[kk]));
@@ -182,7 +182,7 @@ __global__ void histogram_pre_scan_compaction(key_t* input, uint32_t* bin, uint3
 
       myInput[kk] = input[global_index + laneId];
 
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t rx_buffer = __ballot_sync(FULL_MASK,bucket_identifier(myInput[kk]));
       #else
       uint32_t rx_buffer = __ballot(bucket_identifier(myInput[kk]));
@@ -264,14 +264,14 @@ __global__ void split_post_scan_compaction(key_t* key_input, uint32_t* warpOffse
         myBucket = (bucket_identifier(myInput[kk]))?1u:0u;
       }
 
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t mask = __ballot_sync(FULL_MASK,valid_input);
       #else
       uint32_t mask = __ballot(valid_input);
       #endif
 
       // Computing the histogram and local indices:
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t rx_buffer = __ballot_sync(FULL_MASK,myBucket);
       #else
       uint32_t rx_buffer = __ballot(myBucket);
@@ -282,7 +282,7 @@ __global__ void split_post_scan_compaction(key_t* key_input, uint32_t* warpOffse
       // writing back the local masks:
       binCounter[kk] = __popc(myHisto & mask);
       scan_histo[kk] = binCounter[kk];
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t n = __shfl_sync(FULL_MASK, scan_histo[kk], 0, 2);
       #else
       uint32_t n = __shfl(scan_histo[kk], 0, 2);
@@ -294,7 +294,7 @@ __global__ void split_post_scan_compaction(key_t* key_input, uint32_t* warpOffse
 
       // finding its new index within the warp:
       myNewIndex[kk]  = __popc(myMask & (0xFFFFFFFF >> (31-laneId))) - 1;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       myNewIndex[kk] += __shfl_sync(FULL_MASK, scan_histo[kk], myBucket, 32);
       #else
       myNewIndex[kk] += __shfl(scan_histo[kk], myBucket, 32);
@@ -317,7 +317,7 @@ __global__ void split_post_scan_compaction(key_t* key_input, uint32_t* warpOffse
       key_t myNewKey = (valid_input)?keys_ms_smem[(warpId << 5)*DEPTH + (kk<<5) + laneId]:0xFFFFFFFF;
 
       uint32_t finalIndex = (valid_input)?warp_offsets_smem[NUM_W * DEPTH * bucket_identifier(myNewKey) + warpId * DEPTH + kk] + laneId:0;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       finalIndex -= __shfl_sync(FULL_MASK, scan_histo[kk], bucket_identifier(myNewKey), 32);
       #else
       finalIndex -= __shfl(scan_histo[kk], bucket_identifier(myNewKey), 32);
@@ -338,7 +338,7 @@ __global__ void split_post_scan_compaction(key_t* key_input, uint32_t* warpOffse
       // Computing the histogram and local indices:
 
       uint32_t myBucket = bucket_identifier(myInput[kk]);
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t rx_buffer = __ballot_sync(FULL_MASK,myBucket);
       #else
       uint32_t rx_buffer = __ballot(myBucket);
@@ -351,7 +351,7 @@ __global__ void split_post_scan_compaction(key_t* key_input, uint32_t* warpOffse
 
       scan_histo[kk] = binCounter[kk];
 
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t n = __shfl_sync(FULL_MASK, scan_histo[kk], 0, 2);
       #else
       uint32_t n = __shfl(scan_histo[kk], 0, 2);
@@ -364,7 +364,7 @@ __global__ void split_post_scan_compaction(key_t* key_input, uint32_t* warpOffse
 
       // finding its new index within the warp:
       myNewIndex[kk]  = __popc(myMask & (0xFFFFFFFF >> (31-laneId))) - 1;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       myNewIndex[kk] += __shfl_sync(FULL_MASK, scan_histo[kk], myBucket, 32);
       #else
       myNewIndex[kk] += __shfl(scan_histo[kk], myBucket, 32);
@@ -384,7 +384,7 @@ __global__ void split_post_scan_compaction(key_t* key_input, uint32_t* warpOffse
 
       uint32_t myNewBucket = bucket_identifier(myNewKey);
       uint32_t finalIndex = warp_offsets_smem[NUM_W * DEPTH * myNewBucket + warpId * DEPTH + kk] + laneId;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       finalIndex -= __shfl_sync(FULL_MASK, scan_histo[kk], myNewBucket, 32);
       #else
       finalIndex -= __shfl(scan_histo[kk], myNewBucket, 32);
@@ -445,14 +445,14 @@ __global__ void split_post_scan_pairs_compaction(key_t* key_input, value_t* valu
         myBucket = (bucket_identifier(myInput[kk]))?1u:0u;
       }
 
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t mask = __ballot_sync(FULL_MASK,valid_input);
       #else
       uint32_t mask = __ballot(valid_input);
       #endif
 
       // Computing the histogram and local indices:
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t rx_buffer = __ballot_sync(FULL_MASK,myBucket);
       #else
       uint32_t rx_buffer = __ballot(myBucket);
@@ -463,7 +463,7 @@ __global__ void split_post_scan_pairs_compaction(key_t* key_input, value_t* valu
       // writing back the local masks:
       binCounter[kk] = __popc(myHisto & mask);
       scan_histo[kk] = binCounter[kk];
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t n = __shfl_sync(FULL_MASK, scan_histo[kk], 0, 2);
       #else
       uint32_t n = __shfl(scan_histo[kk], 0, 2);
@@ -475,7 +475,7 @@ __global__ void split_post_scan_pairs_compaction(key_t* key_input, value_t* valu
 
       // finding its new index within the warp:
       myNewIndex[kk]  = __popc(myMask & (0xFFFFFFFF >> (31-laneId))) - 1;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       myNewIndex[kk] += __shfl_sync(FULL_MASK, scan_histo[kk], myBucket, 32);
       #else
       myNewIndex[kk] += __shfl(scan_histo[kk], myBucket, 32);
@@ -500,7 +500,7 @@ __global__ void split_post_scan_pairs_compaction(key_t* key_input, value_t* valu
       value_t myNewValue = (valid_input)?values_ms_smem[(warpId << 5)*DEPTH + (kk<<5) + laneId]:0xFFFFFFFF;
 
       uint32_t finalIndex = (valid_input)?warp_offsets_smem[NUM_W * DEPTH * bucket_identifier(myNewKey) + warpId * DEPTH + kk] + laneId:0;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       finalIndex -= __shfl_sync(FULL_MASK, scan_histo[kk], bucket_identifier(myNewKey), 32);
       #else
       finalIndex -= __shfl(scan_histo[kk], bucket_identifier(myNewKey), 32);
@@ -524,7 +524,7 @@ __global__ void split_post_scan_pairs_compaction(key_t* key_input, value_t* valu
       // Computing the histogram and local indices:
 
       uint32_t myBucket = bucket_identifier(myInput[kk]);
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t rx_buffer = __ballot_sync(FULL_MASK,myBucket);
       #else
       uint32_t rx_buffer = __ballot(myBucket);
@@ -537,7 +537,7 @@ __global__ void split_post_scan_pairs_compaction(key_t* key_input, value_t* valu
 
       scan_histo[kk] = binCounter[kk];
 
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t n = __shfl_sync(FULL_MASK, scan_histo[kk], 0, 2);
       #else
       uint32_t n = __shfl(scan_histo[kk], 0, 2);
@@ -550,7 +550,7 @@ __global__ void split_post_scan_pairs_compaction(key_t* key_input, value_t* valu
 
       // finding its new index within the warp:
       myNewIndex[kk]  = __popc(myMask & (0xFFFFFFFF >> (31-laneId))) - 1;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       myNewIndex[kk] += __shfl_sync(FULL_MASK, scan_histo[kk], myBucket, 32);
       #else
       myNewIndex[kk] += __shfl(scan_histo[kk], myBucket, 32);
@@ -572,7 +572,7 @@ __global__ void split_post_scan_pairs_compaction(key_t* key_input, value_t* valu
 
       uint32_t myNewBucket = bucket_identifier(myNewKey);
       uint32_t finalIndex = warp_offsets_smem[NUM_W * DEPTH * myNewBucket + warpId * DEPTH + kk] + laneId;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       finalIndex -= __shfl_sync(FULL_MASK, scan_histo[kk], myNewBucket, 32);
       #else
       finalIndex -= __shfl(scan_histo[kk], myNewBucket, 32);
@@ -629,7 +629,7 @@ __global__ void multisplit_WMS_prescan(key_type* input, uint32_t* bin, uint32_t 
       uint32_t myHisto = 0xFFFFFFFF;
       uint32_t bit = myBucket;
       uint32_t rx_buffer;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t mask = __ballot_sync(FULL_MASK,valid_input);
       #else
       uint32_t mask = __ballot(valid_input);
@@ -639,7 +639,7 @@ __global__ void multisplit_WMS_prescan(key_type* input, uint32_t* bin, uint32_t 
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -695,7 +695,7 @@ __global__ void multisplit_WMS_prescan(key_type* input, uint32_t* bin, uint32_t 
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -779,7 +779,7 @@ __global__ void multisplit_WMS_postscan(key_type* key_input, uint32_t* warpOffse
         myBucket = bucket_identifier(myInput[kk]);
       }
 
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t mask = __ballot_sync(FULL_MASK,valid_input);
       #else
       uint32_t mask = __ballot(valid_input);
@@ -792,7 +792,7 @@ __global__ void multisplit_WMS_postscan(key_type* key_input, uint32_t* warpOffse
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -809,7 +809,7 @@ __global__ void multisplit_WMS_postscan(key_type* key_input, uint32_t* warpOffse
       #pragma unroll
       for(int i = 1; i<(1<<LOG_B); i<<=1)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         __shfl_up_sync(FULL_MASK, scan_histo[kk], i, 32);
         #else
         n = __shfl_up(scan_histo[kk], i, 32);
@@ -822,7 +822,7 @@ __global__ void multisplit_WMS_postscan(key_type* key_input, uint32_t* warpOffse
 
       // finding its new index within the warp:
       myNewIndex[kk]  = __popc(myMask & (0xFFFFFFFF >> (31-laneId))) - 1;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       myNewIndex[kk] += __shfl_sync(FULL_MASK, scan_histo[kk], myBucket, 32);
       #else
       myNewIndex[kk] += __shfl(scan_histo[kk], myBucket, 32);
@@ -845,7 +845,7 @@ __global__ void multisplit_WMS_postscan(key_type* key_input, uint32_t* warpOffse
       key_type myNewKey = (valid_input)?keys_ms_smem[(warpId << 5)*DEPTH + (kk<<5) + laneId]:0xFFFFFFFF;
       uint32_t myNewBucket = bucket_identifier(myNewKey);
       uint32_t finalIndex = (valid_input)?warp_offsets_smem[NUM_W * DEPTH * myNewBucket + warpId * DEPTH + kk] + laneId:0;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       finalIndex -= __shfl_sync(FULL_MASK, scan_histo[kk], myNewBucket, 32);
       #else
       finalIndex -= __shfl(scan_histo[kk], myNewBucket, 32);
@@ -873,7 +873,7 @@ __global__ void multisplit_WMS_postscan(key_type* key_input, uint32_t* warpOffse
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -890,7 +890,7 @@ __global__ void multisplit_WMS_postscan(key_type* key_input, uint32_t* warpOffse
       #pragma unroll
       for(int i = 1; i<(1<<LOG_B); i<<=1)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         __shfl_up_sync(FULL_MASK, scan_histo[kk], i, 32);
         #else
         n = __shfl_up(scan_histo[kk], i, 32);
@@ -903,7 +903,7 @@ __global__ void multisplit_WMS_postscan(key_type* key_input, uint32_t* warpOffse
 
       // finding its new index within the warp:
       myNewIndex[kk]  = __popc(myMask & (0xFFFFFFFF >> (31-laneId))) - 1;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       myNewIndex[kk] += __shfl_sync(FULL_MASK, scan_histo[kk], myBucket, 32);
       #else
       myNewIndex[kk] += __shfl(scan_histo[kk], myBucket, 32);
@@ -922,7 +922,7 @@ __global__ void multisplit_WMS_postscan(key_type* key_input, uint32_t* warpOffse
       key_type myNewKey = keys_ms_smem[(warpId << 5)*DEPTH + (kk<<5) + laneId];
       uint32_t myNewBucket = bucket_identifier(myNewKey);
       uint32_t finalIndex = warp_offsets_smem[NUM_W * DEPTH * myNewBucket + warpId * DEPTH + kk] + laneId;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       finalIndex -= __shfl_sync(FULL_MASK, scan_histo[kk], myNewBucket, 32);
       #else
       finalIndex -= __shfl(scan_histo[kk], myNewBucket, 32);
@@ -982,7 +982,7 @@ __global__ void multisplit_WMS_pairs_postscan(key_type* key_input, value_type* v
         myBucket = bucket_identifier(myInput[kk]);
       }
 
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t mask = __ballot_sync(FULL_MASK,valid_input);
       #else
       uint32_t mask = __ballot(valid_input);
@@ -995,7 +995,7 @@ __global__ void multisplit_WMS_pairs_postscan(key_type* key_input, value_type* v
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -1013,7 +1013,7 @@ __global__ void multisplit_WMS_pairs_postscan(key_type* key_input, value_type* v
       #pragma unroll
       for(int i = 1; i<(1<<LOG_B); i<<=1)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         __shfl_up_sync(FULL_MASK, scan_histo[kk], i, 32);
         #else
         n = __shfl_up(scan_histo[kk], i, 32);
@@ -1025,7 +1025,7 @@ __global__ void multisplit_WMS_pairs_postscan(key_type* key_input, value_type* v
 
       // finding its new index within the warp:
       myNewIndex[kk]  = __popc(myMask & (0xFFFFFFFF >> (31-laneId))) - 1;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       myNewIndex[kk] += __shfl_sync(FULL_MASK, scan_histo[kk], myBucket, 32);
       #else
       myNewIndex[kk] += __shfl(scan_histo[kk], myBucket, 32);
@@ -1052,7 +1052,7 @@ __global__ void multisplit_WMS_pairs_postscan(key_type* key_input, value_type* v
       uint32_t myNewBucket = bucket_identifier(myNewKey);
 
       uint32_t finalIndex = (valid_input)?warp_offsets_smem[NUM_W * DEPTH * myNewBucket + warpId * DEPTH + kk] + laneId:0;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       finalIndex -= __shfl_sync(FULL_MASK, scan_histo[kk], myNewBucket, 32);
       #else
       finalIndex -= __shfl(scan_histo[kk], myNewBucket, 32);
@@ -1082,7 +1082,7 @@ __global__ void multisplit_WMS_pairs_postscan(key_type* key_input, value_type* v
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -1099,7 +1099,7 @@ __global__ void multisplit_WMS_pairs_postscan(key_type* key_input, value_type* v
       #pragma unroll
       for(int i = 1; i<(1<<LOG_B); i<<=1)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         __shfl_up_sync(FULL_MASK, scan_histo[kk], i, 32);
         #else
         n = __shfl_up(scan_histo[kk], i, 32);
@@ -1111,7 +1111,7 @@ __global__ void multisplit_WMS_pairs_postscan(key_type* key_input, value_type* v
 
       // finding its new index within the warp:
       myNewIndex[kk]  = __popc(myMask & (0xFFFFFFFF >> (31-laneId))) - 1;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       myNewIndex[kk] += __shfl_sync(FULL_MASK, scan_histo[kk], myBucket, 32);
       #else
       myNewIndex[kk] += __shfl(scan_histo[kk], myBucket, 32);
@@ -1133,7 +1133,7 @@ __global__ void multisplit_WMS_pairs_postscan(key_type* key_input, value_type* v
       uint32_t myNewBucket = bucket_identifier(myNewKey);
       uint32_t finalIndex = warp_offsets_smem[NUM_W * DEPTH * myNewBucket + warpId * DEPTH + kk] + laneId;
 
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       finalIndex -= __shfl_sync(FULL_MASK, scan_histo[kk], myNewBucket, 32);
       #else
       finalIndex -= __shfl(scan_histo[kk], myNewBucket, 32);
@@ -1187,7 +1187,7 @@ __global__ void multisplit_BMS_prescan(key_type* input, uint32_t* bin, uint32_t 
       uint32_t myHisto = 0xFFFFFFFF;
       uint32_t bit = myBucket;
       uint32_t rx_buffer;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t mask = __ballot_sync(FULL_MASK,valid_input);
       #else
       uint32_t mask = __ballot(valid_input);
@@ -1197,7 +1197,7 @@ __global__ void multisplit_BMS_prescan(key_type* input, uint32_t* bin, uint32_t 
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -1268,7 +1268,7 @@ __global__ void multisplit_BMS_prescan(key_type* input, uint32_t* bin, uint32_t 
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -1360,7 +1360,7 @@ __global__ void multisplit_BMS_postscan(key_type* key_input, uint32_t* blockOffs
       uint32_t myLocalIndex = 0xFFFFFFFF;
       uint32_t bit = myBucket;
       uint32_t rx_buffer;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t mask = __ballot_sync(FULL_MASK,valid_input);
       #else
       uint32_t mask = __ballot(valid_input);
@@ -1370,7 +1370,7 @@ __global__ void multisplit_BMS_postscan(key_type* key_input, uint32_t* blockOffs
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -1399,7 +1399,7 @@ __global__ void multisplit_BMS_postscan(key_type* key_input, uint32_t* blockOffs
       }
       // Computing block-level indices:
       scan_temp[kk] -= binCounter[kk]; // exclusive scan
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t myLocalBlockIndex = __shfl_sync(FULL_MASK, scan_temp[kk], myBucket, 32);
       #else
       uint32_t myLocalBlockIndex = __shfl(scan_temp[kk], myBucket, 32);
@@ -1417,7 +1417,7 @@ __global__ void multisplit_BMS_postscan(key_type* key_input, uint32_t* blockOffs
         #pragma unroll
         for(int i = 1; i<(1<<LOG_B); i<<=1)
         {
-          #if __CUDA_ARCH__ >= 700
+          #if __CUDACC_VER_MAJOR__ >= 9
           __shfl_up_sync(FULL_MASK, block_scan, i, 32);
           #else
           n = __shfl_up(block_scan, i, 32);
@@ -1472,7 +1472,7 @@ __global__ void multisplit_BMS_postscan(key_type* key_input, uint32_t* blockOffs
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -1501,7 +1501,7 @@ __global__ void multisplit_BMS_postscan(key_type* key_input, uint32_t* blockOffs
       }
       // Computing block-level indices:
       scan_temp[kk] -= binCounter[kk]; // exclusive scan
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t myLocalBlockIndex = __shfl_sync(FULL_MASK, scan_temp[kk], myBucket, 32);
       #else
       uint32_t myLocalBlockIndex = __shfl(scan_temp[kk], myBucket, 32);
@@ -1518,7 +1518,7 @@ __global__ void multisplit_BMS_postscan(key_type* key_input, uint32_t* blockOffs
         #pragma unroll
         for(int i = 1; i<(1<<LOG_B); i<<=1)
         {
-          #if __CUDA_ARCH__ >= 700
+          #if __CUDACC_VER_MAJOR__ >= 9
           __shfl_up_sync(FULL_MASK, block_scan, i, 32);
           #else
           n = __shfl_up(block_scan, i, 32);
@@ -1600,7 +1600,7 @@ __global__ void multisplit_BMS_pairs_postscan(key_type* key_input, value_type* v
       uint32_t myLocalIndex = 0xFFFFFFFF;
       uint32_t bit = myBucket;
       uint32_t rx_buffer;
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t mask = __ballot_sync(FULL_MASK,valid_input);
       #else
       uint32_t mask = __ballot(valid_input);
@@ -1610,7 +1610,7 @@ __global__ void multisplit_BMS_pairs_postscan(key_type* key_input, value_type* v
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -1638,7 +1638,7 @@ __global__ void multisplit_BMS_pairs_postscan(key_type* key_input, value_type* v
       }
       // Computing block-level indices:
       scan_temp[kk] -= binCounter[kk]; // exclusive scan
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t myLocalBlockIndex = __shfl_sync(FULL_MASK, scan_temp[kk], myBucket, 32);
       #else
       uint32_t myLocalBlockIndex = __shfl(scan_temp[kk], myBucket, 32);
@@ -1656,7 +1656,7 @@ __global__ void multisplit_BMS_pairs_postscan(key_type* key_input, value_type* v
         #pragma unroll
         for(int i = 1; i<(1<<LOG_B); i<<=1)
         {
-          #if __CUDA_ARCH__ >= 700
+          #if __CUDACC_VER_MAJOR__ >= 9
           __shfl_up_sync(FULL_MASK, block_scan, i, 32);
           #else
           n = __shfl_up(block_scan, i, 32);
@@ -1715,7 +1715,7 @@ __global__ void multisplit_BMS_pairs_postscan(key_type* key_input, value_type* v
       #pragma unroll
       for(int i = 0; i<LOG_B; i++)
       {
-        #if __CUDA_ARCH__ >= 700
+        #if __CUDACC_VER_MAJOR__ >= 9
         rx_buffer = __ballot_sync(FULL_MASK,bit & 0x01);
         #else
         rx_buffer = __ballot(bit & 0x01);
@@ -1744,7 +1744,7 @@ __global__ void multisplit_BMS_pairs_postscan(key_type* key_input, value_type* v
       }
       // Computing block-level indices:
       scan_temp[kk] -= binCounter[kk]; // exclusive scan
-      #if __CUDA_ARCH__ >= 700
+      #if __CUDACC_VER_MAJOR__ >= 9
       uint32_t myLocalBlockIndex = __shfl_sync(FULL_MASK, scan_temp[kk], myBucket, 32);
       #else
       uint32_t myLocalBlockIndex = __shfl(scan_temp[kk], myBucket, 32);
@@ -1760,7 +1760,7 @@ __global__ void multisplit_BMS_pairs_postscan(key_type* key_input, value_type* v
         #pragma unroll
         for(int i = 1; i<(1<<LOG_B); i<<=1)
         {
-          #if __CUDA_ARCH__ >= 700
+          #if __CUDACC_VER_MAJOR__ >= 9
           __shfl_up_sync(FULL_MASK, block_scan, i, 32);
           #else
           n = __shfl_up(block_scan, i, 32);

@@ -108,6 +108,7 @@ $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
 
 target_link_libraries(cudpp_hash cudpp)
 
+set_target_properties( cudpp_hash PROPERTIES CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 install(FILES ${HFILES_PUBLIC}
   DESTINATION include
   )

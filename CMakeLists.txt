@@ -66,6 +66,7 @@ set(CMAKE_DEBUG_POSTFIX "${bits}d")
 if(CUDPP_BUILD_SHARED_LIBS)
   # User wants to build Dynamic Libraries, so change the LIB_TYPE variable to CMake keyword 'SHARED'
   set(LIB_TYPE SHARED)
+  SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 else()
   set(LIB_TYPE STATIC)
   set(CUDPP_STATIC_LIB 1)

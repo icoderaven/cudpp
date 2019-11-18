@@ -145,6 +145,7 @@ target_include_directories(cudpp PRIVATE
 target_include_directories(cudpp PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
     )
+set_target_properties(cudpp PROPERTIES CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 install(FILES ${HFILES_PUBLIC}
   DESTINATION include
